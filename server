@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+
+var DNode = require('dnode'); 
+var sys = require('sys'); 
+var fs = require('fs'); 
+var http = require('http'); 
+var html = fs.readFileSync(__dirname + '/web.html'); 
+var js = require('dnode/web').source(); 
+
+var color = require('./lib/color.js');
+
+var httpServer = http.createServer(function (req,res) { 
+  if (req.url == '/dnode.js') { 
+    res.writeHead(200, { 'Content-Type' : 'text/javascript' });
+    res.end(js); 
+  } else { 
+    res.writeHead(200, { 'Content-Type' : 'text/html' });
+    res.end(html); } 
+});
+
+httpServer.listen(8080); 
+
+DNode(function (client) {
+
+  this.currentColor = "#400000";
+  this.getColor = function(reply){
+    var rgb = color.rgbFromHtml(this.currentColor);
+    var hsv = color.rgb2hsv(rgb.r, rgb.g, rgb.b);
+    hsv.h += Math.random()/1.5; if(hsv.h >= 360) hsv.h = 0;
+    hsv.s += (Math.random()-0.5)/16;
+    hsv.v += (Math.random()-0.5)/32;
+    rgb = color.hsv2rgb(hsv.h, hsv.s, hsv.v);
+    this.currentColor = color.htmlFromRgb(rgb);
+    reply(this.currentColor);
+  };
+
+  this.times = function (n,by,f) { f(n * by) }; 
+
+  this.whoAmI = function (reply) { 
+    client.name(function (name) { 
+      reply( name.replace(/Mr\.?/,'Mister').replace(/Ms\.?/,'Miss').replace(/Mrs\.?/,'Misses') );
+    }) 
+  }; 
+
+}).listen({
+  protocol : 'socket.io', 
+  server : httpServer, 
+  transports : 'websocket xhr-multipart xhr-polling htmlfile'.split(/\s+/)
+}).listen(8081); 

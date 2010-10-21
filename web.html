@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js" type="text/javascript"></script>
+<script type="text/javascript" src="/dnode.js"></script>
+<script type="text/javascript">
+  DNode({ 
+    name : function (f) { 
+      f('Mr. Spock') 
+    }
+  }).connect(function (remote) { 
+    new CandM(remote);
+  });
+  CandM = function(remote){
+    var self = this;
+    this.remote = remote;
+    this.calls = 0;
+
+    this.num = null;
+    this.changeColor = function(){
+      this.remote.getColor(function(newColor){
+	self.calls ++;
+        document.getElementById("color").innerHTML = String(newColor);        
+        document.getElementById("calls").innerHTML = String(self.calls);        
+        document.getElementsByTagName("body")[0].style.backgroundColor = newColor;
+      });
+    }
+    this.times = function(n){
+      if(n != this.num){
+        this.num = n;
+        document.getElementById("result").innerHTML = String(1);        
+      }
+      this.remote.times(n, parseInt(document.getElementById("result").innerHTML), function (n) { 
+        self.calls ++;
+        document.getElementById("result").innerHTML = String(n); 
+        document.getElementById("calls").innerHTML = String(self.calls); 
+//        setTimeout(function(){ self.countUp(); }, 25);
+          window.mozRequestAnimationFrame();
+      });
+    };
+
+    this.countUp = function(){
+      this.times(parseInt(document.getElementById("times").value));
+      this.changeColor();
+    }
+
+    this.whoAmI = function(){
+      this.remote.whoAmI(function (name) { 
+        document.getElementById("name").innerHTML = name; 
+      }); 
+    };
+    window.addEventListener("MozBeforePaint", function(){ self.countUp(); }, false);
+    window.mozRequestAnimationFrame();
+  }
+</script> 
+</head>
+<body style="color: white; background-color: #333;">
+<p>times(<input id="times" size="2" value="2" />) == <span id="result">1</span></p> 
+<p>Color == <span id="color">#######</span>
+<p>Server Reqs == <span id="calls">#######</span>
+</body>
+</html>
